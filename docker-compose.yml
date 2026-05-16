@@ -1,0 +1,17 @@
+services:
+  blazorweb:
+    build: .
+    restart: always
+    ports:
+      - "8080:8080"
+  db:
+    image: "postgres:latest"
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: shop
+      POSTGRES_PASSWORD: shoppassword
+      POSTGRES_DB: shopdb
+    volumes:
+      - ./dbdata/:/var/lib/postgresql/
