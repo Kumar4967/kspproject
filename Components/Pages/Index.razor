@@ -1,4 +1,7 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDbContext> DbFactory
 
 <PageTitle>Главная магазина</PageTitle>
 
@@ -14,10 +17,10 @@
         <div class="col">
           <div class="card shadow-sm">
             <svg aria-label="Placeholder: Thumbnail" class="bd-placeholder-img card-img-top" height="225" preserveAspectRatio="xMidYMid slice" role="img" width="100%" xmlns="http://www.w3.org/2000/svg">
-              <title>@template.Title</title>
+              <title>@template.Product.Name</title>
               <rect width="100%" height="100%" fill="#55595c">
               </rect>
-              <text x="50%" y="50%" fill="#eceeef" dy=".3em">@template.Title
+              <text x="50%" y="50%" fill="#eceeef" dy=".3em">@template.Product.Name
               </text>
             </svg>
             <div class="card-body">
@@ -42,23 +45,12 @@
 </div>
 
 @code {
-  private List<AdModel>? LoadedAds = null;
+  private List<Advertisement>? LoadedAds = null;
   protected override async Task OnInitializedAsync()
   {
-    // Simulate a database or API call to load your data on open
-    await Task.Delay(500);
-    LoadedAds = new List<AdModel>
-    {
-      new() { Title = "Email Campaign", Description = "Newsletter structure.", Name = "Email" },
-      new() { Title = "Invoice PDF", Description = "Billing and receipt breakdown.", Name = "Invoice" },
-      new() { Title = "Dashboard Grid", Description = "Analytics widgets layout.", Name = "Dashboard" }
-    };
-  }
-
-  public class AdModel
-  {
-    public string Title { get; set; } = "";
-    public string Description { get; set; } = "";
-    public string Name { get; set; } = "";
+    using var context = await DbFactory.CreateDbContextAsync();
+    LoadedAds = await context.Ads
+        .Include(a => a.Product)
+        .ToListAsync();
   }
 }
