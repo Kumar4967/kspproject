@@ -1,7 +1,7 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <header class="p-3 text-bg-dark">
+<div class="page container">
+    <header class="p-3 text-bg-dark mb-3">
         <div class="container">
             <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
                 <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
@@ -13,7 +13,7 @@
                     <li><a href="/about" class="nav-link px-2 text-white">О нас</a></li>
                 </ul>
                 <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search"> <input type="search" class="form-control form-control-dark text-bg-dark" placeholder="Поиск..." aria-label="Поиск"> </form>
-                <div class="text-end"> <button type="button" class="btn btn-outline-light me-2">Войти</button> <button type="button" class="btn btn-warning">Зарегистрироваться</button> </div>
+                <div class="text-end"> <button id="loginbtn" type="button" class="btn btn-outline-light me-2">Войти</button> <button id="registerbtn" type="button" class="btn btn-warning">Зарегистрироваться</button> </div>
             </div>
         </div>
     </header>
@@ -21,10 +21,22 @@
     <main>
         @Body
     </main>
+
+    <footer class="container pt-4 my-md-5 pt-md-5 border-top">
+        <p class="float-end">
+            <a href="#">Наверх</a>
+        </p>
+        <p>© 2026 Жуков. ·
+            <a href="/about">Пользовательское соглашение
+            </a> ·
+            <a href="/about">Правила
+            </a>
+        </p>
+    </footer>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+    Возникла непредвиденная ошибка.
+    <a href="." class="reload">Перезапустить</a>
+    <span class="dismiss">Закрыть</span>
 </div>

@@ -1,0 +1,25 @@
+@typeparam TItem
+
+@if (Items == null)
+{
+    <p>Загружаем предложения...</p>
+}
+else if (!Items.Any())
+{
+    <p>На текущий момент никаких предложений нет.</p>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-3">
+    @foreach (var item in Items) {
+      @ItemTemplate(item)
+    }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public IEnumerable<TItem>? Items { get; set; }
+    [Parameter]
+    public RenderFragment<TItem> ItemTemplate { get; set; } = null!;
+}

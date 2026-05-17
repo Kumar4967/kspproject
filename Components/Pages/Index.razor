@@ -1,0 +1,66 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Web
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Главная магазина</PageTitle>
+
+<div class="slide mb-6">
+  @if (LoadedAds == null)
+  {
+    <p>Загрузка предложений...</p>
+  }
+  else
+  {
+    <AdsRepeater Items="LoadedAds">
+      <ItemTemplate Context="template">
+        <div class="col">
+          <div class="card shadow-sm">
+            <svg aria-label="Placeholder: Thumbnail" class="bd-placeholder-img card-img-top" height="225" preserveAspectRatio="xMidYMid slice" role="img" width="100%" xmlns="http://www.w3.org/2000/svg">
+              <title>@template.Title</title>
+              <rect width="100%" height="100%" fill="#55595c">
+              </rect>
+              <text x="50%" y="50%" fill="#eceeef" dy=".3em">@template.Title
+              </text>
+            </svg>
+            <div class="card-body">
+              <p class="card-text">This is a wider card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.
+              </p>
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="btn-group">
+                  <button type="button" class="btn btn-sm btn-outline-secondary">View
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary">Edit
+                  </button>
+                </div>
+                <small class="text-body-secondary">9 mins
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ItemTemplate>
+    </AdsRepeater>
+  }
+</div>
+
+@code {
+  private List<AdModel>? LoadedAds = null;
+  protected override async Task OnInitializedAsync()
+  {
+    // Simulate a database or API call to load your data on open
+    await Task.Delay(500);
+    LoadedAds = new List<AdModel>
+    {
+      new() { Title = "Email Campaign", Description = "Newsletter structure.", Name = "Email" },
+      new() { Title = "Invoice PDF", Description = "Billing and receipt breakdown.", Name = "Invoice" },
+      new() { Title = "Dashboard Grid", Description = "Analytics widgets layout.", Name = "Dashboard" }
+    };
+  }
+
+  public class AdModel
+  {
+    public string Title { get; set; } = "";
+    public string Description { get; set; } = "";
+    public string Name { get; set; } = "";
+  }
+}
