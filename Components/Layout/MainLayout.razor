@@ -3,6 +3,7 @@
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
+@inject ICartService CartService
 
 <div class="page container">
     <header class="p-3 text-bg-dark mb-3">
@@ -39,6 +40,7 @@
                             <ul class="dropdown-menu show" style="position: absolute; right: 0; display: block; background-color: #212529; border: 1px solid #4a4a4a;">
                                 <li><a class="dropdown-item" href="/profile">Профиль</a></li>
                                 <li><a class="dropdown-item" href="/orders">Мои заказы</a></li>
+                                <li><a class="dropdown-item" href="/cart">Моя корзина</a></li>
                                 @if (isAdmin)
                                 {
                                     <li><hr class="dropdown-divider"></li>

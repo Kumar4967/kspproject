@@ -8,11 +8,3 @@ public interface IOrderService
     Task<bool> CancelOrderAsync(int orderId, string userId);
     Task UpdateOrderStatusAsync(int orderId, string status);
 }
-
-public class CartItem
-{
-    public int ProductId { get; set; }
-    public string ProductName { get; set; } = string.Empty;
-    public int Quantity { get; set; }
-    public decimal Price { get; set; }
-}

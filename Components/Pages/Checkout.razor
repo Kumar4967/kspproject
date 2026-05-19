@@ -1,0 +1,217 @@
+@page "/checkout"
+@attribute [Authorize]
+@using ksoproject.Models
+@using Microsoft.AspNetCore.Components.Authorization
+@inject ICartService CartService
+@inject IOrderService OrderService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JS
+
+<PageTitle>Оформление заказа</PageTitle>
+
+<div class="container mt-4">
+    <h2>Оформление заказа</h2>
+
+    @if (isLoading)
+    {
+        <div class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
+            </div>
+        </div>
+    }
+    else if (cartItems == null || !cartItems.Any())
+    {
+        <div class="alert alert-info">
+            Ваша корзина пуста. <a href="/shop">Перейти к покупкам</a>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-7">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Информация для доставки</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Адрес доставки *</label>
+                            <input type="text" class="form-control" @bind="shippingAddress"
+                                   placeholder="Улица, дом, квартира, город" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Способ оплаты *</label>
+                            <select class="form-select" @bind="paymentMethod">
+                                <option value="">Выберите способ оплаты</option>
+                                <option value="card">Банковская карта</option>
+                                <option value="cash">Наличные при получении</option>
+                                <option value="online">Онлайн оплата</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Комментарий к заказу</label>
+                            <textarea class="form-control" @bind="comments" rows="3"
+                                      placeholder="Дополнительная информация"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Ваш заказ</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Товар</th>
+                                        <th>Кол-во</th>
+                                        <th>Сумма</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in cartItems)
+                                    {
+                                        <tr>
+                                            <td>@item.ProductName</td>
+                                            <td>@item.Quantity</td>
+                                            <td>@((item.Price * item.Quantity).ToString("C"))</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr class="fw-bold">
+                                        <td colspan="2">Итого:</td>
+                                        <td>@totalAmount.ToString("C")</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger">@errorMessage</div>
+                        }
+
+                        <button class="btn btn-primary w-100" @onclick="PlaceOrder" disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            }
+                            Оформить заказ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<CartItem>? cartItems;
+    private decimal totalAmount;
+    private string shippingAddress = string.Empty;
+    private string paymentMethod = string.Empty;
+    private string comments = string.Empty;
+    private string errorMessage = string.Empty;
+    private bool isLoading = true;
+    private bool isSubmitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCart();
+    }
+
+    private async Task LoadCart()
+    {
+        try
+        {
+            isLoading = true;
+            cartItems = await CartService.GetCartItemsAsync();
+            totalAmount = await CartService.GetCartTotalAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading cart: {ex.Message}");
+            errorMessage = "Ошибка при загрузке корзины";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task PlaceOrder()
+    {
+        if (string.IsNullOrWhiteSpace(shippingAddress))
+        {
+            errorMessage = "Введите адрес доставки";
+            return;
+        }
+
+        if (string.IsNullOrEmpty(paymentMethod))
+        {
+            errorMessage = "Выберите способ оплаты";
+            return;
+        }
+
+        if (cartItems == null || !cartItems.Any())
+        {
+            errorMessage = "Корзина пуста";
+            return;
+        }
+
+        try
+        {
+            isSubmitting = true;
+            errorMessage = string.Empty;
+            StateHasChanged();
+
+            // Get current user
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                errorMessage = "Пользователь не авторизован";
+                return;
+            }
+
+            // Create order
+            var fullAddress = $"{shippingAddress}\nКомментарий: {comments}";
+            var order = await OrderService.CreateOrderAsync(userId, cartItems, fullAddress, paymentMethod);
+
+            if (order != null)
+            {
+                // Clear cart after successful order
+                await CartService.ClearCartAsync();
+
+                // Show success message
+                await JS.InvokeVoidAsync("showNotification", "Заказ успешно оформлен!", "success");
+
+                // Redirect to orders page
+                Navigation.NavigateTo("/orders", forceLoad: true);
+            }
+            else
+            {
+                errorMessage = "Ошибка при создании заказа";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error placing order: {ex.Message}");
+            errorMessage = $"Ошибка: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -60,6 +60,9 @@ builder.Services.AddScoped<IValidator<RegisterViewModel>, RegisterViewModelValid
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<LocalStorageService>();
+
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAuthorization();
 

@@ -53,17 +53,36 @@
     [Parameter]
     public bool ShowDetails { get; set; } = false;
 
+    [Inject]
+    private ICartService? CartService { get; set; }
+
+    [Inject]
+    private IJSRuntime? JS { get; set; }
+
+    [Inject]
+    private NavigationManager? Navigation { get; set; }
+
     private bool isAdding = false;
 
     private async Task OnAddToCart()
     {
-        if (Product != null)
+        if (Product != null && CartService != null && JS != null)
         {
             try
             {
                 isAdding = true;
                 StateHasChanged();
-                Console.WriteLine($"Added product {Product.Id}");
+
+                // Add to cart
+                await CartService.AddToCartAsync(Product.Id, 1);
+
+                // Show success notification
+                await ShowNotification($"{Product.Name} добавлен в корзину", "success");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error adding to cart: {ex.Message}");
+                await ShowNotification("Ошибка при добавлении товара", "error");
             }
             finally
             {
@@ -75,6 +94,21 @@
 
     private async Task OnViewDetails()
     {
-        Console.WriteLine("Product view is not implemented yet");
+        if (Navigation != null && Product != null)
+        {
+            Navigation.NavigateTo($"/product/{Product.Id}");
+        }
+        else
+        {
+            Console.WriteLine("Product view is not implemented yet");
+        }
+    }
+
+    private async Task ShowNotification(string message, string type)
+    {
+        if (JS != null)
+        {
+            await JS.InvokeVoidAsync("showNotification", message, type);
+        }
     }
 }
