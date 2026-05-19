@@ -27,7 +27,7 @@ public class LoginHandlerModel : PageModel
     {
         if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
         {
-            return RedirectToPage("/login", new { error = "Email and password are required" });
+            return Redirect("/login?error=" + Uri.EscapeDataString("Email and password are required"));
         }
 
         var result = await _signInManager.PasswordSignInAsync(email, password, rememberMe, lockoutOnFailure: false);
@@ -40,28 +40,28 @@ public class LoginHandlerModel : PageModel
 
         if (result.IsLockedOut)
         {
-            return RedirectToPage("/login", new { error = "Account is locked out. Please try again later." });
+            return Redirect("/login?error=" + Uri.EscapeDataString("Account is locked out. Please try again later."));
         }
 
-        return RedirectToPage("/login", new { error = "Invalid email or password" });
+        return Redirect("/login?error=" + Uri.EscapeDataString("Invalid email or password"));
     }
 
     public async Task<IActionResult> OnPostRegister(string email, string password, string confirmPassword, string returnUrl = "/")
     {
         if (password != confirmPassword)
         {
-            return RedirectToPage("/login", new { error = "Passwords do not match", register = "true" });
+            return Redirect("/login?error=" + Uri.EscapeDataString("Passwords do not match") + "&register=true");
         }
 
         if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
         {
-            return RedirectToPage("/login", new { error = "Email and password are required", register = "true" });
+            return Redirect("/login?error=" + Uri.EscapeDataString("Email and password are required") + "&register=true");
         }
 
         var existingUser = await _userManager.FindByEmailAsync(email);
         if (existingUser != null)
         {
-            return RedirectToPage("/login", new { error = "User with this email already exists", register = "true" });
+            return Redirect("/login?error=" + Uri.EscapeDataString("User with this email already exists") + "&register=true");
         }
 
         var user = new IdentityUser
@@ -81,6 +81,6 @@ public class LoginHandlerModel : PageModel
         }
 
         var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-        return RedirectToPage("/login", new { error = errors, register = "true" });
+        return Redirect("/login?error=" + Uri.EscapeDataString(errors) + "&register=true");
     }
 }

@@ -55,6 +55,7 @@
         try
         {
             LoadedAds = await DbContext.Ads
+                .OrderBy(p => p.Id)
                 .Take(4)
                 .Include(a => a.Product)
                 .ToListAsync();

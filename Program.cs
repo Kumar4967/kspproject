@@ -89,7 +89,6 @@ else
 }
 
 app.UseStatusCodePagesWithReExecute("/not-found");
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
