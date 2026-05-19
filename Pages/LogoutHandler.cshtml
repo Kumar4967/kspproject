@@ -1,0 +1,8 @@
+@page "/logout"
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Mvc
+@inject SignInManager<IdentityUser> SignInManager
+@{
+    await SignInManager.SignOutAsync();
+    LocalRedirect("/").ExecuteResultAsync(PageContext);
+}

@@ -1,82 +1,128 @@
 @page "/login"
-@using Microsoft.AspNetCore.Components.Web
-@using Microsoft.EntityFrameworkCore
-@using BCrypt.Net
-@inject IDbContextFactory<AppDbContext> DbFactory
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
 
 @if (register is not null)
 {
-<PageTitle>Регистрация</PageTitle>
+    <PageTitle>Регистрация</PageTitle>
 }
 else
 {
-<PageTitle>Вход</PageTitle>
+    <PageTitle>Вход</PageTitle>
 }
 
-<div class="form-signin w-100 m-auto">
-  <form>
-    <h1 class="h3 mb-3 fw-normal">Пожалуйста, @(register != null ? "зарегистрируйтесь" : "войдите")
-    </h1>
-    <div class="form-floating">
-      <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com" @bind="LoginValue">
-        <label for="floatingInput">Логин
-        </label>
-    </div>
-    <div class="form-floating">
-      <input type="password" class="form-control" id="floatingPassword" placeholder="Password" @bind="Password">
-        <label for="floatingPassword">Пароль
-        </label>
-    </div>
-    <div class="form-check text-start my-3">
-      <input class="form-check-input" type="checkbox" value="remember-me" id="checkDefault">
-        <label class="form-check-label" for="checkDefault">
-          Запомнить вход
-        </label>
-    </div>
-    <button @onclick="SendAccount" class="btn btn-primary w-100 py-2" type="submit">@(register != null ? "Создать аккаунт" : "Войти")</button>
-  </form>
-</div>
-
-@code
+@if (isCheckingAuth)
 {
+    <div class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else
+{
+<div class="form-signin w-100 m-auto">
+    @if (register is not null)
+    {
+        <form method="post" action="/login-handler?handler=Register">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            <h1 class="h3 mb-3 fw-normal">Пожалуйста, зарегистрируйтесь</h1>
+
+            <div class="form-floating mb-2">
+                <input type="email" name="email" class="form-control" id="registerEmail"
+                       placeholder="name@example.com" required />
+                <label for="registerEmail">Email</label>
+            </div>
+
+            <div class="form-floating mb-2">
+                <input type="password" name="password" class="form-control" id="registerPassword"
+                       placeholder="Password" required />
+                <label for="registerPassword">Пароль</label>
+            </div>
+
+            <div class="form-floating mb-2">
+                <input type="password" name="confirmPassword" class="form-control" id="registerConfirmPassword"
+                       placeholder="Confirm Password" required />
+                <label for="registerConfirmPassword">Подтвердите пароль</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2">Создать аккаунт</button>
+
+            <div class="text-center mt-3">
+                <a href="/login">Уже есть аккаунт? Войти</a>
+            </div>
+        </form>
+    }
+    else
+    {
+        <form method="post" action="/login-handler?handler=Login">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            <h1 class="h3 mb-3 fw-normal">Пожалуйста, войдите</h1>
+
+            <div class="form-floating mb-2">
+                <input type="email" name="email" class="form-control" id="loginEmail"
+                       placeholder="name@example.com" required />
+                <label for="loginEmail">Email</label>
+            </div>
+
+            <div class="form-floating mb-2">
+                <input type="password" name="password" class="form-control" id="loginPassword"
+                       placeholder="Password" required />
+                <label for="loginPassword">Пароль</label>
+            </div>
+
+            <div class="form-check text-start my-3">
+                <input type="checkbox" class="form-check-input" name="rememberMe" id="checkDefault" value="true" />
+                <label class="form-check-label" for="checkDefault">
+                    Запомнить вход
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-2">Войти</button>
+
+            <div class="text-center mt-3">
+                <a href="/login?register=true">Нет аккаунта? Зарегистрироваться</a>
+            </div>
+        </form>
+    }
+</div>
+}
+
+@code {
     [SupplyParameterFromQuery]
     [Parameter]
     public string? register { get; set; }
 
-    public string LoginValue = "";
-    public string Password = "";
+    [SupplyParameterFromQuery]
+    [Parameter]
+    public string? error { get; set; }
 
-    private async void SendAccount()
+    private string errorMessage = string.Empty;
+    private bool isCheckingAuth = true;
+
+    protected override async Task OnInitializedAsync()
     {
-        using var context = await DbFactory.CreateDbContextAsync();
-        if (register != null)
+        if (!string.IsNullOrEmpty(error))
         {
-            if (await context.Users.AnyAsync(u => u.Username.ToLower() == LoginValue.ToLower()))
-            {
-                return;
-            }
-            string passwordHash = BCrypt.HashPassword(Password);
-            var newUser = new User
-            {
-                Username = LoginValue,
-                PasswordHash = passwordHash,
-            };
-            context.Users.Add(newUser);
-            await context.SaveChangesAsync();
-            return;
+            errorMessage = error;
         }
-        else
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
         {
-            var user = await context.Users.FirstOrDefaultAsync(u => u.Username == LoginValue);
-            if (user == null)
-            {
-                return;
-            }
-            bool isValid = BCrypt.Verify(Password, user.PasswordHash);
-            if (!isValid)
-            {
-                // add login code here.
-            }
+            Navigation.NavigateTo("/", forceLoad: true);
         }
+        isCheckingAuth = false;
     }
 }

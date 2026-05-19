@@ -1,14 +1,35 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<IdentityUser>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
     public DbSet<Advertisement> Ads { get; set; } = null!;
     public DbSet<Product> Products { get; set; } = null!;
-    public DbSet<User> Users { get; set; } = null!;
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        builder.Entity<Product>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired();
+        });
+
+        builder.Entity<Advertisement>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Product)
+                  .WithMany()
+                  .HasForeignKey(e => e.ProductId);
+        });
+    }
 }
 
+// Keep your business entities
 public class Product
 {
     public int Id { get; set; }
@@ -21,13 +42,4 @@ public class Advertisement
     public int Id { get; set; }
     public int ProductId { get; set; }
     public Product? Product { get; set; }
-}
-
-public class User
-{
-    public int Id { get; set; }
-    [Required]
-    public string Username { get; set; } = null!;
-    [Required]
-    public string PasswordHash { get; set; } = null!;
 }

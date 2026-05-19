@@ -18,3 +18,24 @@
     right: 0.75rem;
     top: 0.5rem;
 }
+
+.dropdown-item {
+    color: #fff !important;
+}
+
+.dropdown-item:hover {
+    background-color: #4a4a4a !important;
+    color: #fff !important;
+}
+
+.dropdown-menu {
+    background-color: #212529;
+    border: 1px solid #4a4a4a;
+    border-radius: 5px;
+    padding: 8px 0;
+}
+
+.dropdown-menu hr {
+    border-color: #4a4a4a;
+    margin: 8px 0;
+}

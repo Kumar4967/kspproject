@@ -1,5 +1,8 @@
 ﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
 
 <div class="page container">
     <header class="p-3 text-bg-dark mb-3">
@@ -13,8 +16,47 @@
                     <li><a href="/shop" class="nav-link px-2 text-white">Товары</a></li>
                     <li><a href="/about" class="nav-link px-2 text-white">О нас</a></li>
                 </ul>
-                <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search"> <input type="search" class="form-control form-control-dark text-bg-dark" placeholder="Поиск..." aria-label="Поиск"> </form>
-                <div class="text-end"> <button id="loginbtn" @onclick="OpenLoginPage" type="button" class="btn btn-outline-light me-2">Войти</button> <button id="registerbtn" @onclick="OpenRegisterPage" type="button" class="btn btn-warning">Зарегистрироваться</button> </div>
+                <form class="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search">
+                    <input type="search" class="form-control form-control-dark text-bg-dark" placeholder="Поиск..." aria-label="Поиск">
+                </form>
+
+                @if (isLoading)
+                {
+                    <div class="text-end">
+                        <div class="spinner-border spinner-border-sm text-light" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                }
+                else if (isAuthenticated)
+                {
+                    <div class="dropdown text-end">
+                        <a href="#" class="d-block link-light text-decoration-none" @onclick="ToggleDropdown" @onclick:preventDefault="true">
+                            <i class="bi bi-person-circle"></i> @userName
+                        </a>
+                        @if (showDropdown)
+                        {
+                            <ul class="dropdown-menu show" style="position: absolute; right: 0; display: block; background-color: #212529; border: 1px solid #4a4a4a;">
+                                <li><a class="dropdown-item" href="/profile">Профиль</a></li>
+                                <li><a class="dropdown-item" href="/orders">Мои заказы</a></li>
+                                @if (isAdmin)
+                                {
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="/admin">Админ панель</a></li>
+                                }
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/logout">Выйти</a></li>
+                            </ul>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-end">
+                        <button id="loginbtn" @onclick="OpenLoginPage" type="button" class="btn btn-outline-light me-2">Войти</button>
+                        <button id="registerbtn" @onclick="OpenRegisterPage" type="button" class="btn btn-warning">Зарегистрироваться</button>
+                    </div>
+                }
             </div>
         </div>
     </header>
@@ -31,21 +73,78 @@
     </footer>
 </div>
 
-<div id="blazor-error-ui" data-nosnippet>
-    Возникла непредвиденная ошибка.
-    <a href="." class="reload">Перезапустить</a>
-    <span class="dismiss">Закрыть</span>
-</div>
+@code {
+    private bool isAuthenticated = false;
+    private string userName = string.Empty;
+    private bool isAdmin = false;
+    private bool isLoading = true;
+    private bool showDropdown = false;
+    private DotNetObjectReference<MainLayout>? dotNetHelper;
 
-@code
-{
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            isAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+            if (isAuthenticated)
+            {
+                userName = user.Identity?.Name ?? user.FindFirst("email")?.Value ?? "Пользователь";
+                isAdmin = user.IsInRole("Admin");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking auth: {ex.Message}");
+            isAuthenticated = false;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && isAuthenticated)
+        {
+            dotNetHelper = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("setupClickOutsideHandler", dotNetHelper);
+        }
+    }
+
+    private void ToggleDropdown()
+    {
+        showDropdown = !showDropdown;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void CloseDropdown()
+    {
+        if (showDropdown)
+        {
+            showDropdown = false;
+            StateHasChanged();
+        }
+    }
+
     private void OpenRegisterPage()
     {
-        Navigation.NavigateTo("/login?register=true");
+        Navigation.NavigateTo("/login?register=true", true);
     }
 
     private void OpenLoginPage()
     {
-        Navigation.NavigateTo("/login");
+        Navigation.NavigateTo("/login", true);
+    }
+
+    public void Dispose()
+    {
+        dotNetHelper?.Dispose();
     }
 }
