@@ -1,8 +1,9 @@
-using ksoproject.Components;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using ksoproject.Components;
+using ksoproject.Services;
 
 bool isHttps = false;
 
@@ -150,4 +151,7 @@ async Task SeedDatabaseAsync(IServiceProvider services)
             await userManager.AddToRoleAsync(adminUser, "Admin");
         }
     }
+
+    var seeder = new DataSeeder(services.GetRequiredService<AppDbContext>());
+    await seeder.SeedDataAsync();
 }
