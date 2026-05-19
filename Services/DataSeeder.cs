@@ -29,40 +29,56 @@ public class DataSeeder
 
     private async Task SeedProductsAsync()
     {
-        var products = new List<Product>();
-        var productNames = new[]
-        {
-            "Смартфон Galaxy S23", "Ноутбук MacBook Pro", "Наушники Sony WH-1000XM5",
-            "Клавиатура Mechanical", "Мышь Logitech MX Master", "Монитор Dell UltraSharp",
-            "Внешний SSD 1TB", "Роутер TP-Link", "Веб-камера Logitech", "USB-хаб",
-            "Зарядное устройство", "Чехол для телефона", "Защитное стекло", "Стилус",
-            "Подставка для ноутбука", "Сумка для ноутбука", "Беспроводная зарядка",
-            "Смарт-часы", "Фитнес-браслет", "Портативная колонка"
-        };
-
-        var descriptions = new[]
-        {
-            "Высококачественное устройство с отличными характеристиками",
-            "Новейшая модель с улучшенной производительностью",
-            "Идеально подходит для работы и развлечений",
-            "Профессиональное оборудование для требовательных пользователей",
-            "Стильный дизайн и надежная конструкция"
-        };
-
-        // Generate 10-15 random products
-        int productCount = _random.Next(10, 16);
-
-        for (int i = 0; i < productCount; i++)
-        {
-            var product = new Product
-            {
-                Name = productNames[_random.Next(productNames.Length)],
-                Description = descriptions[_random.Next(descriptions.Length)] +
-                             $" | Артикул: {_random.Next(1000, 9999)}"
-            };
-            products.Add(product);
-        }
-
+        List<Product> products = [
+            new() {
+                Name = "Кофта stone island",
+                Description = "Отличное предложение",
+                ImagePath = "/img/1.jpg",
+                Price = 25000
+            },
+            new() {
+                Name = "Футболка supreme",
+                Description = "Низкая цена",
+                ImagePath = "/img/2.jpg",
+                Price = 9999
+            },
+            new() {
+                Name = "Кепка Balenciaga",
+                Description = "Хороший выбор на лето",
+                ImagePath = "/img/3.jpg",
+                Price = 25000
+            },
+            new() {
+                Name = "Носки Gucci",
+                Description = "Отлично сидят",
+                ImagePath = "/img/4.jpg",
+                Price = 7999
+            },
+            new() {
+                Name = "Браслет lacoste",
+                Description = "Для деловых встреч",
+                ImagePath = "/img/5.jpg",
+                Price = 6700
+            },
+            new() {
+                Name = "Штаны C.P. Company",
+                Description = "Идеальный вариант",
+                ImagePath = "/img/6.jpg",
+                Price = 13999
+            },
+            new() {
+                Name = "Шорты Nike",
+                Description = "Отдых на море будет лучшим в них",
+                ImagePath = "/img/7.jpg",
+                Price = 2999
+            },
+            new() {
+                Name = "Браслет Van Cleef",
+                Description = "Для тех, кого ценят",
+                ImagePath = "/img/8.jpg",
+                Price = 650000
+            }
+        ];
         await _context.Products.AddRangeAsync(products);
         await _context.SaveChangesAsync();
     }
