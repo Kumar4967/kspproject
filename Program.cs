@@ -50,10 +50,13 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.IsEssential = true;
 });
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddValidatorsFromAssemblyContaining<LoginViewModelValidator>();
 builder.Services.AddScoped<IValidator<LoginViewModel>, LoginViewModelValidator>();
 builder.Services.AddScoped<IValidator<RegisterViewModel>, RegisterViewModelValidator>();
 
+builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddCascadingAuthenticationState();
