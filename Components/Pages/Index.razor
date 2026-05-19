@@ -49,6 +49,7 @@
   protected override async Task OnInitializedAsync()
   {
     LoadedAds = await DbContext.Ads
+        .Take(5)
         .Include(a => a.Product)
         .ToListAsync();
   }
