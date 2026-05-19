@@ -1,52 +1,72 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.EntityFrameworkCore
+@using ksoproject.Models
 @inject AppDbContext DbContext
+@inject NavigationManager Navigation
 
-<PageTitle>Главное магазина</PageTitle>
+<PageTitle>Главная - Магазин КСП</PageTitle>
 
-<div class="slide mb-6">
-  @if (LoadedAds == null)
-  {
-    <p>Загрузка предложений...</p>
-  }
-  else
-  {
-    <AdsRepeater Items="LoadedAds">
-      <ItemTemplate Context="template">
-        <div class="col">
-          <div class="card shadow-sm">
-            <svg aria-label="Placeholder: Thumbnail" class="bd-placeholder-img card-img-top" height="225" preserveAspectRatio="xMidYMid slice" role="img" width="100%" xmlns="http://www.w3.org/2000/svg">
-              <title>@(template.Product?.Name ?? "Продукт")</title>
-              <rect width="100%" height="100%" fill="#55595c">
-              </rect>
-              <text x="0%" y="50%" fill="#eceeef" dy=".3em">@(template.Product?.Name ?? "Продукт")
-              </text>
-            </svg>
-            <div class="card-body">
-              <p class="card-text">@(template.Product?.Description ?? "")
-              </p>
-              <div class="d-flex justify-content-between align-items-center">
-                <div class="btn-group">
-                  <button type="button" class="btn btn-sm btn-outline-secondary">Добавить в корзину
-                  </button>
-                </div>
-              </div>
+<div class="container">
+    @if (LoadedAds == null)
+    {
+        <div class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Загрузка...</span>
             </div>
-          </div>
+            <p class="mt-2">Загрузка предложений...</p>
         </div>
-      </ItemTemplate>
-    </AdsRepeater>
-  }
+    }
+    else if (!LoadedAds.Any())
+    {
+        <div class="alert alert-info my-5">
+            Нет доступных предложений.
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4 text-center">Рекомендуемые товары</h2>
+            </div>
+        </div>
+
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+            @foreach (var ad in LoadedAds)
+            {
+                <ProductCard Product="@ad.Product"
+                             Price="@ad.Product?.Price.ToString("C")"
+                             ShowDetails="false"/>
+            }
+        </div>
+    }
 </div>
 
 @code {
-  private List<Advertisement>? LoadedAds = null;
-  protected override async Task OnInitializedAsync()
-  {
-    LoadedAds = await DbContext.Ads
-        .Take(4)
-        .Include(a => a.Product)
-        .ToListAsync();
-  }
+    private List<Advertisement>? LoadedAds = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAdvertisements();
+    }
+
+    private async Task LoadAdvertisements()
+    {
+        try
+        {
+            LoadedAds = await DbContext.Ads
+                .Take(4)
+                .Include(a => a.Product)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading ads: {ex.Message}");
+            LoadedAds = new List<Advertisement>();
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
 }

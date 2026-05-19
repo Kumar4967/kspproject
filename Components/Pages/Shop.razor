@@ -1,50 +1,177 @@
 ﻿@page "/shop"
-@using Microsoft.AspNetCore.Components.Web
 @using Microsoft.EntityFrameworkCore
+@using ksoproject.Models
 @inject AppDbContext DbContext
+@inject NavigationManager Navigation
 
-<PageTitle>Товары магазина</PageTitle>
+<PageTitle>Товары - Магазин КСП</PageTitle>
 
-<div class="slide mb-6">
-  @if (LoadedProducts == null)
-  {
-    <p>Загрузка предложений...</p>
-  }
-  else
-  {
-    <AdsRepeater Items="LoadedProducts">
-      <ItemTemplate Context="template">
-        <div class="col">
-          <div class="card shadow-sm">
-            <svg aria-label="Placeholder: Thumbnail" class="bd-placeholder-img card-img-top" height="225" preserveAspectRatio="xMidYMid slice" role="img" width="100%" xmlns="http://www.w3.org/2000/svg">
-              <title>@(template.Name ?? "Продукт")</title>
-              <rect width="100%" height="100%" fill="#55595c">
-              </rect>
-              <text x="0%" y="50%" fill="#eceeef" dy=".3em">@(template.Name ?? "Продукт")
-              </text>
-            </svg>
-            <div class="card-body">
-              <p class="card-text">@(template.Description ?? "")
-              </p>
-              <div class="d-flex justify-content-between align-items-center">
-                <div class="btn-group">
-                  <button type="button" class="btn btn-sm btn-outline-secondary">Добавить
-                  </button>
+<div class="container">
+    <div class="row">
+        <!-- Sidebar with filters -->
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Фильтры</h5>
                 </div>
-              </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Поиск</label>
+                        <input type="text" class="form-control" placeholder="Поиск товаров..."
+                               @bind="searchTerm" @bind:event="oninput" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Сортировка</label>
+                        <select class="form-select" @bind="sortOrder">
+                            <option value="name">По имени</option>
+                            <option value="price_asc">Цена (сначала дешевые)</option>
+                            <option value="price_desc">Цена (сначала дорогие)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary w-100" @onclick="ResetFilters">
+                        Сбросить фильтры
+                    </button>
+                </div>
             </div>
-          </div>
         </div>
-      </ItemTemplate>
-    </AdsRepeater>
-  }
+
+        <!-- Products grid -->
+        <div class="col-md-9">
+            <h1 class="mb-4">Все товары</h1>
+
+            @if (isLoading)
+            {
+                <div class="text-center my-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Загрузка...</span>
+                    </div>
+                    <p class="mt-2">Загрузка товаров...</p>
+                </div>
+            }
+            else if (filteredProducts == null || !filteredProducts.Any())
+            {
+                <div class="alert alert-info">
+                    @if (!string.IsNullOrEmpty(searchTerm))
+                    {
+                        <span>Товары по запросу "<strong>@searchTerm</strong>" не найдены.</span>
+                        <br />
+                        <a href="#" @onclick="ResetFilters">Показать все товары</a>
+                    }
+                    else
+                    {
+                        <span>Товары отсутствуют.</span>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-3 g-4">
+                    @foreach (var product in filteredProducts)
+                    {
+                        <ProductCard Product="@product"
+                                     Price="@product.Price.ToString("C")"
+                                     ShowDetails="false" />
+                    }
+                </div>
+                <div class="mt-4 text-muted text-center">
+                    Показано @filteredProducts.Count товаров из @allProducts?.Count
+                </div>
+            }
+        </div>
+    </div>
 </div>
 
 @code {
-  private List<Product>? LoadedProducts = null;
-  protected override async Task OnInitializedAsync()
-  {
-    LoadedProducts = await DbContext.Products
-        .ToListAsync();
-  }
+    private List<Product>? allProducts;
+    private List<Product>? _filteredProducts;
+    private string _searchTerm = string.Empty;
+    private string _sortOrder = "name";
+    private bool isLoading = true;
+
+    private List<Product>? filteredProducts
+    {
+        get => _filteredProducts;
+        set
+        {
+            _filteredProducts = value;
+            StateHasChanged();
+        }
+    }
+
+    private string searchTerm
+    {
+        get => _searchTerm;
+        set
+        {
+            _searchTerm = value;
+            ApplyFiltersAndSorting();
+        }
+    }
+
+    private string sortOrder
+    {
+        get => _sortOrder;
+        set
+        {
+            _sortOrder = value;
+            ApplyFiltersAndSorting();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        try
+        {
+            isLoading = true;
+            allProducts = await DbContext.Products.ToListAsync();
+            ApplyFiltersAndSorting();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading products: {ex.Message}");
+            allProducts = new List<Product>();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyFiltersAndSorting()
+    {
+        if (allProducts == null) return;
+
+        var query = allProducts.AsEnumerable();
+
+        // Apply search filter
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            query = query.Where(p =>
+                p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (p.Description?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        // Apply sorting
+        query = sortOrder switch
+        {
+            "price_asc" => query.OrderBy(p => p.Price),
+            "price_desc" => query.OrderByDescending(p => p.Price),
+            _ => query.OrderBy(p => p.Name)
+        };
+
+        filteredProducts = query.ToList();
+    }
+
+    private void ResetFilters()
+    {
+        _searchTerm = string.Empty;
+        _sortOrder = "name";
+        ApplyFiltersAndSorting();
+    }
 }
