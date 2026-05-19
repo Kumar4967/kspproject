@@ -1,0 +1,34 @@
+﻿@page "/orders"
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+@if (isCheckingAuth)
+{
+<PageTitle>Загрузка...</PageTitle>
+}
+else
+{
+<PageTitle>Заказы @Username</PageTitle>
+<div class="form-signin w-100 m-auto">
+     Заказы @Username:
+</div>
+}
+
+@code {
+    private bool isCheckingAuth = true;
+    private string Username = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == false)
+        {
+            Navigation.NavigateTo("/login", forceLoad: true);
+        }
+        isCheckingAuth = false;
+        Username = user.Identity?.Name ?? "unknown";
+    }
+}
