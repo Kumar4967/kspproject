@@ -4,5 +4,5 @@
 @inject SignInManager<IdentityUser> SignInManager
 @{
     await SignInManager.SignOutAsync();
-    LocalRedirect("/").ExecuteResultAsync(PageContext);
+    await LocalRedirect("/").ExecuteResultAsync(PageContext);
 }
